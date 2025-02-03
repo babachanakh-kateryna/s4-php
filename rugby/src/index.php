@@ -112,3 +112,60 @@ foreach ($joueurs as $joueur) {
     echo "<strong>Nom et prenom: </strong>{$joueur->prenom} {$joueur->nom}, <strong>Poste: </strong> {$joueur->poste->libelle}<br>";
 }
 echo "</div>";
+
+echo "<div class='question'><h1>h. Créer un match dont la date est 2022-12-12 et qui se tiendra au Stade de France</h1>";
+$stadeDeFrance = models\Stade::where('nomStade', 'Stade de France')->first();
+
+if ($stadeDeFrance) {
+    $match = new models\Matchs;
+    $match->dateMatch = '2022-12-12';
+    $match->numStade = $stadeDeFrance->numStade;
+    $match->save();
+    echo "Match créé avec succes";
+} else {
+    echo "Stade de France n'est pas trouve";
+}
+echo "</div>";
+
+
+echo "<div class='question'><h1>i. Afficher les matchs (nummatch, dateMatch et le nom du stade) arbitrés par Marius Jonker</h1>";
+$matchs = models\Matchs::whereHas('arbitres', function($query) {
+    $query->where('nomArbitre', 'Marius Jonker');
+})->get();
+echo "<h3>Matchs arbitrés par Marius Jonker:</h3>";
+foreach ($matchs as $match) {
+    echo "<strong>ID : </strong> {$match->numMatch}, <strong>Date : </strong>{$match->dateMatch}, <strong>Stade : </strong> {$match->stade->nomStade}<br>";
+}
+echo "</div>";
+
+echo "<div class='question'><h1>j. Rechercher les équipes qui recevaient et qui ont été arbitrés par Wayne Barnes</h1>";
+$matches = models\Matchs::whereHas('arbitres', function ($query) {
+    $query->where('nomArbitre', '=', 'Wayne Barnes');
+})->with(['equipeReceveuse'])->get();
+
+echo "<h3>Équipes qui recevaient et qui ont été arbitrés par Wayne Barnes:</h3>";
+foreach ($matches as $match) {
+    echo "<strong>ID : </strong> {$match->numMatch}, <strong>Date : </strong>{$match->dateMatch}, <strong>EquipeR : </strong> {$match->equipeReceveuse->pays}<br>";
+}
+echo "</div>";
+
+echo "<div class='question'><h1>k. Rechercher tous les joueurs de l'équipe Néo-Zélandaise qui ont débuté le match du 2007-09-23 contre l’Ecosse</h1>";
+$match = models\Matchs::where('dateMatch', '2007-09-23')
+    ->whereHas('equipeDeplacee', function ($query) {
+        $query->where('codeEquipe', 'NZL');
+    })
+    ->whereHas('equipeReceveuse', function ($query) {
+        $query->where('codeEquipe', 'SCO');
+    })->first();
+
+if ($match) {
+    $joueurs = $match->equipeDeplacee->joueurs;
+    echo "<h3>Joueurs de l'équipe Néo-Zélandaise qui ont débuté le match du 2007-09-23 contre l’Ecosse:</h3>";
+    foreach ($joueurs as $joueur) {
+        echo "<strong>ID : </strong> {$joueur->numJoueur}, <strong>Prénom : </strong> {$joueur->prenom}, <strong> Nom : </strong> {$joueur->nom}<br>";
+    }
+} else {
+    echo "Match non trouvé";
+}
+
+echo "</div>";
