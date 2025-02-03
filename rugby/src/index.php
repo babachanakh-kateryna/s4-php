@@ -20,7 +20,9 @@ $db->addConnection([
 $db->setAsGlobal();
 $db->bootEloquent();
 
-echo"<h1>a - Donner la liste des équipes, des joueurs, des postes, des arbitres, des stades et des matchs</h1>";
+echo '<link rel="stylesheet" type="text/css" href="style.css">';
+
+echo"<div class='question'><h1>a - Donner la liste des équipes, des joueurs, des postes, des arbitres, des stades et des matchs</h1>";
 
 echo "<h3>Liste des équipes:</h3>";
 foreach (models\Equipe::all() as $equipe) {
@@ -52,7 +54,10 @@ foreach (models\Matchs::all() as $match) {
     echo "<strong>ID : </strong> {$match->numMatch}, <strong>Date : </strong>{$match->dateMatch}, <strong>Spectateurs : </strong> {$match->nbSpect}, <strong> Stade ID : </strong> {$match->numStade}, <strong>Équipe R ID : </strong> {$match->numEquipeR}, <strong>Score R : </strong> {$match->scoreR}, <strong> Essais R : </strong> {$match->nbEssaisR}, <strong> Équipe D ID : </strong> {$match->numEquipeD}, <strong>Score D : </strong> {$match->scoreD}, <strong>Essais D: </strong> {$match->nbEssaisD}<br>";
 }
 
-echo"<h1>b - Rechercher tous les matchs qui se sont déroulés le 2007-09-22 et dans lesquels le score d'une des équipes a dépassé 30 points</h1>";
+echo "</div>";
+
+
+echo"<div class='question'><h1>b - Rechercher tous les matchs qui se sont déroulés le 2007-09-22 et dans lesquels le score d'une des équipes a dépassé 30 points</h1>";
 
 $matchsFilt = models\Matchs::where('dateMatch', '2007-09-22')
     ->where(function($query) {
@@ -65,9 +70,45 @@ foreach ($matchsFilt as $match) {
     echo "<strong>ID : </strong> {$match->numMatch}, <strong>Date : </strong>{$match->dateMatch}, <strong>Spectateurs : </strong> {$match->nbSpect}, <strong> Stade ID : </strong> {$match->numStade}, <strong>Équipe R ID : </strong> {$match->numEquipeR}, <strong>Score R : </strong> {$match->scoreR}, <strong> Essais R : </strong> {$match->nbEssaisR}, <strong> Équipe D ID : </strong> {$match->numEquipeD}, <strong>Score D : </strong> {$match->scoreD}, <strong>Essais D: </strong> {$match->nbEssaisD}<br>";
 }
 
-echo"<h1>c - Donner le nombre de postes en 3ème ligne</h1>";
+echo "</div>";
+
+echo"<div class='question'><h1>c - Donner le nombre de postes en 3ème ligne</h1>";
 $count = models\Poste::where('libelle', 'like', 'Troisième ligne%')->count();
 echo "<strong>Nombre de postes en 3ème ligne : </strong>{$count}";
+echo "</div>";
 
-echo"<h1>d - Donner la liste des stades dont la capacité dépasse 45000 places</h1>";
+echo"<div class='question'><h1>d - Donner la liste des stades dont la capacité dépasse 45000 places</h1>";
+$stades = models\Stade::where('capacite', '>', 45000)->get();
+echo "<h3>Stades avec une capacité supérieure à 45000 places:</h3>";
+foreach ($stades as $stade) {
+    echo "<strong>ID : </strong> {$stade->numStade}, <strong>Ville : </strong>{$stade->ville}, <strong>Nom : </strong> {$stade->nomStade}, <strong>Capacite : </strong> {$stade->capacite}<br>";
+}
+echo "</div>";
 
+echo "<div class='question'><h1>e. Donner la liste des joueurs qui occupent le poste de pilier gauche de la première ligne</h1>";
+$joueurs = models\Joueur::whereHas('poste', function($query) {
+    $query->where('libelle', 'Premiere ligne - Pilier gauche');
+})->get();
+echo "<h3>Joueurs qui occupent le poste de pilier gauche de la première ligne:</h3>";
+foreach ($joueurs as $joueur) {
+    echo "<strong>ID : </strong> {$joueur->numJoueur}, <strong>Prenom : </strong> {$joueur->prenom}, <strong> Nom : </strong> {$joueur->nom}, <strong> Poste ID : </strong> {$joueur->poste->libelle}, <strong> Equipe ID : </strong> {$joueur->equipe->pays}<br>";
+}
+echo "</div>";
+
+
+echo "<div class='question'><h1>f. Donner le poste du joueur Woodcock</h1>";
+$joueur = models\Joueur::where('nom', 'Woodcock')->first();
+if ($joueur) {
+    echo "<strong>Poste du joueur Woodcock : </strong>{$joueur->poste->libelle}";
+} else {
+    echo "Woodcock n'est pas trouvé.";
+}
+echo "</div>";
+
+echo "<div class='question'><h1>g. Donner les postes de chaque joueur</h1>";
+echo "<h3>Liste des postes de chaque joueur:</h3>";
+$joueurs = models\Joueur::with('poste')->get();
+foreach ($joueurs as $joueur) {
+    echo "<strong>Nom et prenom: </strong>{$joueur->prenom} {$joueur->nom}, <strong>Poste: </strong> {$joueur->poste->libelle}<br>";
+}
+echo "</div>";

@@ -1,0 +1,11 @@
+body{
+    font-family: Arial, sans-serif;
+    background-color: #f6a0ff;
+}
+.question {
+    border: 3px solid #c100ff;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    background-color: #fef3ff;
+}
