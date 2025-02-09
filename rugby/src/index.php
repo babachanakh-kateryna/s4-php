@@ -65,7 +65,6 @@ $matchsFilt = models\Matchs::where('dateMatch', '2007-09-22')
             ->orWhere('scoreD', '>', 30);
     })
     ->get();
-echo "<h3>Matchs du 2007-09-22 avec un score supérieur à 30 points:</h3>";
 foreach ($matchsFilt as $match) {
     echo "<strong>ID : </strong> {$match->numMatch}, <strong>Date : </strong>{$match->dateMatch}, <strong>Spectateurs : </strong> {$match->nbSpect}, <strong> Stade ID : </strong> {$match->numStade}, <strong>Équipe R ID : </strong> {$match->numEquipeR}, <strong>Score R : </strong> {$match->scoreR}, <strong> Essais R : </strong> {$match->nbEssaisR}, <strong> Équipe D ID : </strong> {$match->numEquipeD}, <strong>Score D : </strong> {$match->scoreD}, <strong>Essais D: </strong> {$match->nbEssaisD}<br>";
 }
@@ -79,7 +78,6 @@ echo "</div>";
 
 echo"<div class='question'><h1>d - Donner la liste des stades dont la capacité dépasse 45000 places</h1>";
 $stades = models\Stade::where('capacite', '>', 45000)->get();
-echo "<h3>Stades avec une capacité supérieure à 45000 places:</h3>";
 foreach ($stades as $stade) {
     echo "<strong>ID : </strong> {$stade->numStade}, <strong>Ville : </strong>{$stade->ville}, <strong>Nom : </strong> {$stade->nomStade}, <strong>Capacite : </strong> {$stade->capacite}<br>";
 }
@@ -89,7 +87,6 @@ echo "<div class='question'><h1>e. Donner la liste des joueurs qui occupent le p
 $joueurs = models\Joueur::whereHas('poste', function($query) {
     $query->where('libelle', 'Premiere ligne - Pilier gauche');
 })->get();
-echo "<h3>Joueurs qui occupent le poste de pilier gauche de la première ligne:</h3>";
 foreach ($joueurs as $joueur) {
     echo "<strong>ID : </strong> {$joueur->numJoueur}, <strong>Prenom : </strong> {$joueur->prenom}, <strong> Nom : </strong> {$joueur->nom}, <strong> Poste ID : </strong> {$joueur->poste->libelle}, <strong> Equipe ID : </strong> {$joueur->equipe->pays}<br>";
 }
@@ -106,7 +103,6 @@ if ($joueur) {
 echo "</div>";
 
 echo "<div class='question'><h1>g. Donner les postes de chaque joueur</h1>";
-echo "<h3>Liste des postes de chaque joueur:</h3>";
 $joueurs = models\Joueur::with('poste')->get();
 foreach ($joueurs as $joueur) {
     echo "<strong>Nom et prenom: </strong>{$joueur->prenom} {$joueur->nom}, <strong>Poste: </strong> {$joueur->poste->libelle}<br>";
@@ -132,7 +128,6 @@ echo "<div class='question'><h1>i. Afficher les matchs (nummatch, dateMatch et l
 $matchs = models\Matchs::whereHas('arbitres', function($query) {
     $query->where('nomArbitre', 'Marius Jonker');
 })->get();
-echo "<h3>Matchs arbitrés par Marius Jonker:</h3>";
 foreach ($matchs as $match) {
     echo "<strong>ID : </strong> {$match->numMatch}, <strong>Date : </strong>{$match->dateMatch}, <strong>Stade : </strong> {$match->stade->nomStade}<br>";
 }
@@ -143,7 +138,6 @@ $matches = models\Matchs::whereHas('arbitres', function ($query) {
     $query->where('nomArbitre', '=', 'Wayne Barnes');
 })->with(['equipeReceveuse'])->get();
 
-echo "<h3>Équipes qui recevaient et qui ont été arbitrés par Wayne Barnes:</h3>";
 foreach ($matches as $match) {
     echo "<strong>ID : </strong> {$match->numMatch}, <strong>Date : </strong>{$match->dateMatch}, <strong>EquipeR : </strong> {$match->equipeReceveuse->pays}<br>";
 }
@@ -160,7 +154,6 @@ $match = models\Matchs::where('dateMatch', '2007-09-23')
 
 if ($match) {
     $joueurs = $match->equipeDeplacee->joueurs;
-    echo "<h3>Joueurs de l'équipe Néo-Zélandaise qui ont débuté le match du 2007-09-23 contre l’Ecosse:</h3>";
     foreach ($joueurs as $joueur) {
         echo "<strong>ID : </strong> {$joueur->numJoueur}, <strong>Prénom : </strong> {$joueur->prenom}, <strong> Nom : </strong> {$joueur->nom}<br>";
     }
@@ -168,4 +161,39 @@ if ($match) {
     echo "Match non trouvé";
 }
 
+echo "</div>";
+
+echo "<div class='question'><h1>l. Rechercher les joueurs de l'équipe Néo-Zélandaise qui sont entrés en cours de jeu au cours de la coupe du monde</h1>";
+$nzJoueurs = models\Joueur::whereHas('equipe', function ($query) {
+    $query->where('codeEquipe', 'NZL');
+})->whereHas('jouer', function ($query) {
+    $query->where('titulaire', false);
+})->get();
+
+foreach ($nzJoueurs as $player) {
+    echo "{$player->prenom} {$player->nom}<br>";
+}
+
+echo "</div>";
+
+echo "<div class='question'><h1>m. Afficher le nom des joueurs de l'équipe Néo-Zélandaise qui ont joué à la fois contre l’Italie et le Portugal</h1>";
+$joueursContreItlPort = models\Joueur::whereHas('equipe', function ($query) {
+    $query->where('codeEquipe', 'NZL');
+})->whereHas('jouer', function ($query) {
+    $query->whereIn('numMatch', function ($subQuery) {
+        $subQuery->select('numMatch')->from('matchs')
+            ->where('numEquipeD', function ($subQuery) {
+                $subQuery->select('id')->from('equipe')
+                    ->where('codeEquipe', 'ITA');
+            })
+            ->orWhere('numEquipeD', function ($subQuery) {
+                $subQuery->select('id')->from('equipe')
+                    ->where('codeEquipe', 'POR');
+            });
+    })->groupBy('numJoueur')->havingRaw('COUNT(DISTINCT numMatch) = 2');
+})->get();
+
+foreach ($joueursContreItlPort as $player) {
+    echo "{$player->prenom} {$player->nom}<br>";
+}
 echo "</div>";

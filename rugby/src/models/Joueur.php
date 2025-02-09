@@ -15,4 +15,8 @@ class Joueur extends \Illuminate\Database\Eloquent\Model
     public function poste() {
         return $this->belongsTo(Poste::class, 'numPoste', 'numero');
     }
+
+    public function jouer() {
+        return $this->hasMany(Jouer::class, 'numJoueur');
+    }
 }
