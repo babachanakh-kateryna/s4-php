@@ -197,3 +197,30 @@ foreach ($joueursContreItlPort as $player) {
     echo "{$player->prenom} {$player->nom}<br>";
 }
 echo "</div>";
+
+echo "<div class='question'><h1>n. Afficher les joueurs de l'équipe de France qui n'ont joué aucun match</h1>";
+$joueursFr = models\Joueur::whereHas('equipe', function ($query) {
+    $query->where('codeEquipe', 'FRA');
+})->whereNotExists(function ($query) {
+    $query->select(DB::raw(1))
+        ->from('jouer')
+        ->whereRaw('jouer.numJoueur = joueur.numJoueur');
+})->get();
+
+foreach ($joueursFr as $player) {
+    echo "{$player->prenom} {$player->nom}<br>";
+}
+echo "</div>";
+
+echo "<div class='question'><h1>o. Afficher tous les joueurs néo-zélandais qui ont joué tous les matches de leur équipe</h1>";
+$nzId = models\Equipe::where('codeEquipe', 'NZL')->first()->id;
+$totalMatches = models\Matchs::where('numEquipeR', $nzId)->orWhere('numEquipeD', $nzId)->count();
+$nzJoueur = models\Joueur::where('numEquipe', $nzId)->get();
+
+foreach ($nzJoueur as $player) {
+    $matchesPlayed = models\Jouer::where('numJoueur', $player->numJoueur)->count();
+    if ($matchesPlayed == $totalMatches) {
+        echo "{$player->prenom} {$player->nom}<br>";
+    }
+}
+echo "</div>";
