@@ -1,0 +1,25 @@
+.section .content {
+    display: none;
+    overflow: hidden;
+    padding: 10px;
+    border: 1px solid #ccc;
+}
+
+.section .content.open {
+    display: block;
+}
+
+button {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background-color: #f1f1f1;
+    border: none;
+    outline: none;
+    text-align: left;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #ddd;
+}
