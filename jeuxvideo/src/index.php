@@ -104,10 +104,10 @@ echo "<div class='section'>";
 echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>g. Afficher les personnages des jeux dont le nom (du jeu) débute par « Mario »</button>";
 echo "<div class='content'>";
 
-$marioCharacters = models\Character::whereHas('games', function($query) {
+$personnagesMario = models\Character::whereHas('games', function($query) {
     $query->where('name', 'like', 'Mario%');
 })->select('name', 'deck')->get();
-foreach ($marioCharacters as $character) {
+foreach ($personnagesMario as $character) {
     echo $character->name . " - " . $character->deck . "<br>";
 }
 
@@ -118,7 +118,13 @@ echo "<div class='section'>";
 echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>h. Afficher les jeux développés par une compagnie dont le nom contient « Sony »</button>";
 echo "<div class='content'>";
 
-// ****** TO DO ********
+$gamesCompagnieSony = models\Game::select('name', 'deck')
+    ->whereHas('developers', function ($query) {
+        $query->where('name', 'like', '%Sony%');
+    })->get();
+foreach ($gamesCompagnieSony as $game) {
+    echo $game->name . "<br>";
+}
 
 echo "</div></div>";
 
@@ -127,7 +133,27 @@ echo "<div class='section'>";
 echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>i. Afficher le rating initial (indiquer le rating board) des jeux dont le nom contient « Mario »</button>";
 echo "<div class='content'>";
 
-// ****** TO DO ********
+
+$marioGames = models\Game::where('name', 'like', '%Mario%')
+    ->with(['ratings.ratingBoard'])
+    ->get();
+
+if ($marioGames->isEmpty()) {
+    echo "Aucun jeu trouve";
+} else {
+    foreach ($marioGames as $game) {
+        if ($game->ratings->isNotEmpty()) {
+            foreach ($game->ratings as $rating) {
+                echo "<strong>Nom du jeu:</strong> " . htmlspecialchars($game->name) . "<br>";
+                echo "<strong>Rating:</strong> " . htmlspecialchars($rating->name) . "<br>";
+                echo "<strong>Organisme de classification:</strong> " . htmlspecialchars($rating->ratingBoard->name ?? 'N/A') . "<br><br>";
+            }
+        } else {
+            echo "<strong>Nom du jeu:</strong> " . htmlspecialchars($game->name) . "<br>";
+            echo "<em>Aucun rating disponible</em><br><br>";
+        }
+    }
+}
 
 echo "</div></div>";
 
@@ -136,7 +162,14 @@ echo "<div class='section'>";
 echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>j. Afficher les jeux dont le nom débute par « Mario » et ayant plus de 3 personnages</button>";
 echo "<div class='content'>";
 
-// ****** TO DO ********
+$games_q_j = models\Game::where('name', 'like', 'Mario%')
+    ->whereHas('characters', function ($query) {
+        $query->havingRaw('COUNT(*) > 3');
+    }, '>=', 4)
+    ->get();
+foreach ($games_q_j as $game) {
+    echo $game->name . "<br>";
+}
 
 echo "</div></div>";
 
@@ -145,7 +178,28 @@ echo "<div class='section'>";
 echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>k. Afficher les jeux dont le nom débute par « Mario » et dont le rating initial contient « 3+ »</button>";
 echo "<div class='content'>";
 
-// ****** TO DO ********
+$games_q_k = models\Game::where('name', 'like', 'Mario%')
+    ->whereHas('ratings', function ($query) { // filtre les jeux dont le rating contient '3+'
+        $query->where('name', 'like', '%3+%');
+    })
+    ->with(['ratings' => function ($query) { // on charge uniquement les ratings qui contiennent '3+'
+        $query->where('name', 'like', '%3+%');
+    }, 'ratings.ratingBoard'])
+    ->get();
+
+// affichage des resultats
+if ($games_q_k->isEmpty()) {
+    echo "Aucun jeu trouve";
+} else {
+    foreach ($games_q_k as $game) {
+        echo "<br><strong>Nom du jeu:</strong> " . htmlspecialchars($game->name) . "<br>";
+
+        foreach ($game->ratings as $rating) {
+            echo "<strong>Rating:</strong> " . htmlspecialchars($rating->name) . "<br>";
+            echo "<strong>Organisme de classification:</strong> " . htmlspecialchars($rating->ratingBoard->name ?? 'N/A') . "<br>";
+        }
+    }
+}
 
 echo "</div></div>";
 
@@ -154,7 +208,44 @@ echo "<div class='section'>";
 echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>l. Afficher les jeux dont le nom débute par « Mario », publiés par une compagnie dont le nom contient « Inc. » et dont le rating initial contient « 3+ »</button>";
 echo "<div class='content'>";
 
-// ****** TO DO ********
+$games_q_l = models\Game::where('name', 'like', 'Mario%')
+    ->whereHas('publishers', function ($query) {
+        $query->where('name', 'like', '%Inc.%'); // Vérifie que la compagnie contient "Inc."
+    })
+    ->whereHas('ratings', function ($query) {
+        $query->where('name', 'like', '%3+%');
+    })
+    ->with([
+        'publishers' => function ($query) {
+            $query->where('name', 'like', '%Inc.%'); // Charge uniquement les compagnies contenant "Inc."
+        },
+        'ratings' => function ($query) {
+            $query->where('name', 'like', '%3+%')->orderBy('id', 'asc')->limit(1); // Charge uniquement le premier rating contenant "3+"
+        },
+        'ratings.ratingBoard'
+    ])
+    ->get();
+
+// affichage des resultats
+if ($games_q_l->isEmpty()) {
+    echo "Aucun jeu trouvé.";
+} else {
+    foreach ($games_q_l as $game) {
+        echo "<br><strong>Nom du jeu:</strong> " . htmlspecialchars($game->name) . "<br>";
+
+        // Affichage du nom de l'éditeur
+        foreach ($game->publishers as $publisher) {
+            echo "<strong>Publié par:</strong> " . htmlspecialchars($publisher->name) . "<br>";
+        }
+
+        // Affichage du premier rating contenant "3+"
+        if ($game->ratings->isNotEmpty()) {
+            $firstRating = $game->ratings->first();
+            echo "<strong>Rating:</strong> " . htmlspecialchars($firstRating->name) . "<br>";
+            echo "<strong>Organisme de classification:</strong> " . htmlspecialchars($firstRating->ratingBoard->name ?? 'N/A') . "<br>";
+        }
+    }
+}
 
 echo "</div></div>";
 
@@ -173,5 +264,19 @@ echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>n. Aj
 echo "<div class='content'>";
 
 // ****** TO DO ********
+//$newGenre = new models\Genre();
+//$newGenre->name = 'Action-RPG';
+//$newGenre->deck = 'Un genre combinant action et éléments de RPG.';
+//$newGenre->description = 'Les jeux Action-RPG combinent des combats en temps réel avec des mécaniques de progression inspirées des RPG.';
+//$newGenre->save();
+//
+//$gameIds = [12, 56, 12, 345];
+//foreach ($gameIds as $gameId) {
+//    $game = models\Game::find($gameId);
+//    if ($game) {
+//        $game->genres()->attach($newGenre->id);
+//    }
+//}
+
 
 echo "</div></div>";
