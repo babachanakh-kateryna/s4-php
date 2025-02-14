@@ -210,17 +210,17 @@ echo "<div class='content'>";
 
 $games_q_l = models\Game::where('name', 'like', 'Mario%')
     ->whereHas('publishers', function ($query) {
-        $query->where('name', 'like', '%Inc.%'); // Vérifie que la compagnie contient "Inc."
+        $query->where('name', 'like', '%Inc.%'); // la compagnie contient "Inc."
     })
-    ->whereHas('ratings', function ($query) {
+    ->whereHas('ratings', function ($query) { // filtre les jeux dont le rating contient '3+'
         $query->where('name', 'like', '%3+%');
     })
     ->with([
         'publishers' => function ($query) {
-            $query->where('name', 'like', '%Inc.%'); // Charge uniquement les compagnies contenant "Inc."
+            $query->where('name', 'like', '%Inc.%'); // on charge uniquement les compagnies contenant "Inc."
         },
         'ratings' => function ($query) {
-            $query->where('name', 'like', '%3+%')->orderBy('id', 'asc')->limit(1); // Charge uniquement le premier rating contenant "3+"
+            $query->where('name', 'like', '%3+%'); // on charge uniquement les ratings qui contiennent '3+'
         },
         'ratings.ratingBoard'
     ])
@@ -228,12 +228,12 @@ $games_q_l = models\Game::where('name', 'like', 'Mario%')
 
 // affichage des resultats
 if ($games_q_l->isEmpty()) {
-    echo "Aucun jeu trouvé.";
+    echo "Aucun jeu trouve";
 } else {
     foreach ($games_q_l as $game) {
         echo "<br><strong>Nom du jeu:</strong> " . htmlspecialchars($game->name) . "<br>";
 
-        // Affichage du nom de l'éditeur
+        // nom de l'editeur
         foreach ($game->publishers as $publisher) {
             echo "<strong>Publié par:</strong> " . htmlspecialchars($publisher->name) . "<br>";
         }
