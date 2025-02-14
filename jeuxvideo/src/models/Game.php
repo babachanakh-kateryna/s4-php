@@ -32,5 +32,7 @@ class Game extends \Illuminate\Database\Eloquent\Model
     {
         return $this->belongsToMany(Theme::class, 'game2theme', 'game_id', 'theme_id');
     }
-
+    public function ratings() {
+        return $this->belongsToMany(GameRating::class, 'game2rating', 'game_id', 'rating_id');
+    }
 }
