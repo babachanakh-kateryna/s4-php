@@ -180,15 +180,15 @@ echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>i. Af
 echo "<div class='content'>";
 
 // requête
-$marioGames = models\Game::where('name', 'like', '%Mario%')
+$games_q_i = models\Game::where('name', 'like', '%Mario%')
     ->with(['ratings.ratingBoard'])
     ->get();
 
 // affichage des resultats
-if ($marioGames->isEmpty()) {
+if ($games_q_i->isEmpty()) {
     echo "Aucun jeu trouve";
 } else {
-    foreach ($marioGames as $game) {
+    foreach ($games_q_i as $game) {
         if ($game->ratings->isNotEmpty()) {
             foreach ($game->ratings as $rating) {
                 echo "<strong>Nom du jeu:</strong> " . htmlspecialchars($game->name) . "<br>";
@@ -209,13 +209,20 @@ echo "<div class='section'>";
 echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>j. Afficher les jeux dont le nom débute par « Mario » et ayant plus de 3 personnages</button>";
 echo "<div class='content'>";
 
+// requête
 $games_q_j = models\Game::where('name', 'like', 'Mario%')
     ->whereHas('characters', function ($query) {
-        $query->havingRaw('COUNT(*) > 3');
+        $query->havingRaw('COUNT(*) > 3'); // plus de 3 personnages
     }, '>=', 4)
     ->get();
-foreach ($games_q_j as $game) {
-    echo $game->name . "<br>";
+
+// affichage des resultats
+if ($games_q_j ->isEmpty()) {
+    echo "Aucun jeu trouve";
+} else {
+    foreach ($games_q_j as $game) {
+        echo $game->name . "<br>";
+    }
 }
 
 echo "</div></div>";
@@ -225,6 +232,7 @@ echo "<div class='section'>";
 echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>k. Afficher les jeux dont le nom débute par « Mario » et dont le rating initial contient « 3+ »</button>";
 echo "<div class='content'>";
 
+// requête
 $games_q_k = models\Game::where('name', 'like', 'Mario%')
     ->whereHas('ratings', function ($query) { // filtre les jeux dont le rating contient '3+'
         $query->where('name', 'like', '%3+%');
@@ -255,6 +263,7 @@ echo "<div class='section'>";
 echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>l. Afficher les jeux dont le nom débute par « Mario », publiés par une compagnie dont le nom contient « Inc. » et dont le rating initial contient « 3+ »</button>";
 echo "<div class='content'>";
 
+// requête
 $games_q_l = models\Game::where('name', 'like', 'Mario%')
     ->whereHas('publishers', function ($query) {
         $query->where('name', 'like', '%Inc.%'); // la compagnie contient "Inc."
@@ -301,6 +310,7 @@ echo "<div class='section'>";
 echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>m. Afficher les jeux dont le nom débute par « Mario », publiés par une compagnie dont le nom contient « Inc », dont le rating initial contient « 3+ » et ayant reçu un avis de la part du rating board nommé « CERO » </button>";
 echo "<div class='content'>";
 
+// requête
 $games_q_m = models\Game::where('name', 'like', 'Mario%')
     ->whereHas('publishers', function ($query) {
         $query->where('name', 'like', '%Inc%'); // la compagnie contient "Inc."
