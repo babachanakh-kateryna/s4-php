@@ -29,9 +29,12 @@ echo "<div class='section'>";
 echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>a. Lister les jeux dont le nom contient « Marine »</button>";
 echo "<div class='content'>";
 
+// requête
 $jeuxLikeMarine = models\Game::where('name', 'like', '%Marine%')->get();
+
+// affichage des resultats
 foreach ($jeuxLikeMarine as $game) {
-    echo $game->name . "<br>";
+    echo htmlspecialchars($game->name) . "<br>";
 }
 
 echo "</div></div>";
@@ -41,9 +44,12 @@ echo "<div class='section'>";
 echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>b. Lister les compagnies installées en France</button>";
 echo "<div class='content'>";
 
+// requête
 $compagniesFrance = models\Company::where('location_country', 'France')->get();
+
+// affichage des resultats
 foreach ($compagniesFrance as $company) {
-    echo $company->name . "<br>";
+    echo "<strong>Nom : </strong>" . htmlspecialchars($company->name) . "<strong> Country :  </strong>" . htmlspecialchars($company->location_country) ."<br>";
 }
 
 echo "</div></div>";
@@ -53,9 +59,12 @@ echo "<div class='section'>";
 echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>c. Lister les plateformes dont la base installée est >= 10 000 000</button>";
 echo "<div class='content'>";
 
+// requête
 $platformsBaseInstl = models\Platform::where('install_base', '>=', 10000000)->get();
+
+// affichage des resultats
 foreach ($platformsBaseInstl as $platform) {
-    echo $platform->name . "<br>";
+    echo htmlspecialchars($platform->name) . ", la base installée est " . htmlspecialchars($platform->install_base) ."<br>";
 }
 
 echo "</div></div>";
@@ -65,14 +74,17 @@ echo "<div class='section'>";
 echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>d. Lister 200 jeux à partir du 21173 ème</button>";
 echo "<div class='content'>";
 
+// requête
 $startId = 21173;
 $endId = $startId + 199;
 
 $jeuxAPartir = models\Game::where('id', '>=', $startId)
     ->where('id', '<=', $endId)
     ->get();
+
+// affichage des resultats
 foreach ($jeuxAPartir as $game) {
-    echo '<strong>ID : </strong> ' . $game->id . ' <strong>Name : </strong> ' . $game->name . "<br>";
+    echo '<strong>ID : </strong> ' . htmlspecialchars($game->id) . ' <strong>Name : </strong> ' . htmlspecialchars($game->name) . "<br>";
 }
 
 echo "</div></div>";
@@ -254,7 +266,50 @@ echo "<div class='section'>";
 echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>m. Afficher les jeux dont le nom débute par « Mario », publiés par une compagnie dont le nom contient « Inc », dont le rating initial contient « 3+ » et ayant reçu un avis de la part du rating board nommé « CERO » </button>";
 echo "<div class='content'>";
 
-// ****** TO DO ********
+$games_q_m = models\Game::where('name', 'like', 'Mario%')
+    ->whereHas('publishers', function ($query) {
+        $query->where('name', 'like', '%Inc%'); // la compagnie contient "Inc."
+    })
+    ->whereHas('ratings', function ($query) { // filtre les jeux dont le rating contient '3+'
+        $query->where('name', 'like', '%3+%')
+            ->whereHas('ratingBoard', function ($subQuery) { // le rating provient de "CERO"
+                $subQuery->where('name', 'CERO');
+            });
+    })
+    ->with([
+        'publishers' => function ($query) {
+            $query->where('name', 'like', '%Inc%'); // on charge uniquement les compagnies contenant "Inc."
+        },
+        'ratings' => function ($query) {
+            $query->where('name', 'like', '%3+%') // on charge uniquement les ratings qui contiennent '3+'
+            ->whereHas('ratingBoard', function ($subQuery) {
+                $subQuery->where('name', 'CERO');
+            });
+        },
+        'ratings.ratingBoard'
+    ])
+    ->get();
+
+// affichage des resultats
+if ($games_q_m->isEmpty()) {
+    echo "Aucun jeu trouve";
+} else {
+    foreach ($games_q_m as $game) {
+        echo "<br><strong>Nom du jeu:</strong> " . htmlspecialchars($game->name) . "<br>";
+
+        // Affichage du nom de l'éditeur
+        foreach ($game->publishers as $publisher) {
+            echo "<strong>Publié par:</strong> " . htmlspecialchars($publisher->name) . "<br>";
+        }
+
+        // Affichage du premier rating contenant "3+" attribué par "CERO"
+        if ($game->ratings->isNotEmpty()) {
+            $firstRating = $game->ratings->first();
+            echo "<strong>Rating:</strong> " . htmlspecialchars($firstRating->name) . "<br>";
+            echo "<strong>Organisme de classification:</strong> " . htmlspecialchars($firstRating->ratingBoard->name ?? 'N/A') . "<br>";
+        }
+    }
+}
 
 echo "</div></div>";
 
