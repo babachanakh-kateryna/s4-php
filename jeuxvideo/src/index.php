@@ -101,13 +101,13 @@ $perPage = 300;
 $offset = ($page - 1) * $perPage;
 
 // recupere 300 jeux par page
-$games_e = models\Game::select('name', 'deck')->skip($offset)->take($perPage)->get();
+$games_q_e = models\Game::select('name', 'deck')->skip($offset)->take($perPage)->get();
 
 // affichage des resultats
-if ($games_e->isEmpty()) {
+if ($games_q_e->isEmpty()) {
     echo "Aucun jeu trouve";
 } else {
-    foreach ($games_e as $game) {
+    foreach ($games_q_e as $game) {
         echo "<strong>Nom :</strong> " . htmlspecialchars($game->name) . "<br>";
         echo "<strong>Deck :</strong> " . htmlspecialchars($game->deck) . "<br><br>";
     }
@@ -389,20 +389,41 @@ echo "<div class='section'>";
 echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>n. Ajouter un nouveau genre de jeu, et l'associer aux jeux 12, 56, 12, 345</button>";
 echo "<div class='content'>";
 
-// ****** TO DO ********
-//$newGenre = new models\Genre();
-//$newGenre->name = 'Action-RPG';
-//$newGenre->deck = 'Un genre combinant action et éléments de RPG.';
-//$newGenre->description = 'Les jeux Action-RPG combinent des combats en temps réel avec des mécaniques de progression inspirées des RPG.';
-//$newGenre->save();
-//
-//$gameIds = [12, 56, 12, 345];
-//foreach ($gameIds as $gameId) {
-//    $game = models\Game::find($gameId);
-//    if ($game) {
-//        $game->genres()->attach($newGenre->id);
-//    }
-//}
+// si le genre existe déjà
+$genreName = "Action-RPG";
+$existingGenre = models\Genre::where('name', $genreName)->first();
 
+if (!$existingGenre) {
+    // create genre s'il n'existe pas
+    $newGenre = new models\Genre();
+    $newGenre->name = $genreName;
+    $newGenre->deck = 'Un genre combinant action et éléments de RPG.';
+    $newGenre->description = 'Les jeux Action-RPG combinent des combats en temps réel avec des mécaniques de progression inspirées des RPG.';
+    $newGenre->save();
+
+    echo "<strong>Genre ajouté : </strong> " . htmlspecialchars($newGenre->name) . "<br>";
+} else {
+    echo "<strong>Genre déjà existant : </strong> " . htmlspecialchars($existingGenre->name) . "<br>";
+    $newGenre = $existingGenre;
+}
+
+// jeux à associer au genre
+$gameIds = [12, 56, 345];
+
+// affichage des resultats
+foreach ($gameIds as $gameId) {
+    $game = models\Game::find($gameId);
+    if ($game) {
+        // si l'association existe déjà
+        if (!$game->genres()->where('genre_id', $newGenre->id)->exists()) {
+            $game->genres()->attach($newGenre->id);
+            echo "<strong>Genre associé au jeu ID : </strong> " . $gameId . "<br>";
+        } else {
+            echo "<strong>Genre déjà associé au jeu ID : </strong> " . $gameId . "<br>";
+        }
+    } else {
+        echo "<strong>Jeu non trouvé (ID) : </strong> " . $gameId . "<br>";
+    }
+}
 
 echo "</div></div>";
