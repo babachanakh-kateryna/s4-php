@@ -104,9 +104,12 @@ echo "<div class='section'>";
 echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>f. Afficher (name , deck) les personnages du jeu 12342</button>";
 echo "<div class='content'>";
 
+// requête
 $characters = models\Game::find(12342)->characters()->select('name', 'deck')->get();
+
+// affichage des resultats
 foreach ($characters as $character) {
-    echo $character->name . " - " . $character->deck . "<br>";
+    echo htmlspecialchars($character->name) . " - " . htmlspecialchars($character->deck) . "<br>";
 }
 
 echo "</div></div>";
@@ -116,11 +119,26 @@ echo "<div class='section'>";
 echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>g. Afficher les personnages des jeux dont le nom (du jeu) débute par « Mario »</button>";
 echo "<div class='content'>";
 
-$personnagesMario = models\Character::whereHas('games', function($query) {
-    $query->where('name', 'like', 'Mario%');
-})->select('name', 'deck')->get();
-foreach ($personnagesMario as $character) {
-    echo $character->name . " - " . $character->deck . "<br>";
+// requête
+$personnagesMario = models\Character::whereHas('games', function ($query) {
+    $query->where('name', 'like', 'Mario%'); // on selectionne les jeux dont le nom commence par "Mario"
+})
+    ->with(['games' => function ($query) {
+        $query->where('name', 'like', 'Mario%'); // on charge uniquement les jeux "Mario"
+    }])
+    ->get();
+
+// affichage des resultats
+if ($personnagesMario->isEmpty()) {
+    echo "Aucun personnage trouve";
+} else {
+    foreach ($personnagesMario as $character) {
+        echo "<br><strong>Nom du personnage:</strong> " . htmlspecialchars($character->name) . "<br>";
+
+        foreach ($character->games as $game) {
+            echo "<strong>Apparaît dans:</strong> " . htmlspecialchars($game->name) . "<br>";
+        }
+    }
 }
 
 echo "</div></div>";
