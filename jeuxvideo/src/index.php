@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../vendor/autoload.php';
 
+use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Capsule\Manager as DB;
 use jeuxvideo\models as models;
 
@@ -94,7 +95,32 @@ echo "<div class='section'>";
 echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>e. Lister les jeux, afficher leur nom et deck, en paginant (taille des pages à 300)</button>";
 echo "<div class='content'>";
 
-// ****** TO DO ********
+// def de la page actuelle
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$perPage = 300;
+$offset = ($page - 1) * $perPage;
+
+// recupere 300 jeux par page
+$games_e = models\Game::select('name', 'deck')->skip($offset)->take($perPage)->get();
+
+// affichage des resultats
+if ($games_e->isEmpty()) {
+    echo "Aucun jeu trouve";
+} else {
+    foreach ($games_e as $game) {
+        echo "<strong>Nom :</strong> " . htmlspecialchars($game->name) . "<br>";
+        echo "<strong>Deck :</strong> " . htmlspecialchars($game->deck) . "<br><br>";
+    }
+}
+
+// ajout des boutons pour la pagination
+echo "<div style='margin-top:10px;'>";
+if ($page > 1) {
+    echo "<a href='?page=" . ($page - 1) . "'>Page précédente</a> | ";
+}
+echo "<a href='?page=" . ($page + 1) . "'>Page suivante</a>";
+echo "</div>";
+
 
 echo "</div></div>";
 
