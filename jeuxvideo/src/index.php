@@ -121,7 +121,7 @@ echo "<div class='content'>";
 
 // requête
 $personnagesMario = models\Character::whereHas('games', function ($query) {
-    $query->where('name', 'like', 'Mario%'); // on selectionne les jeux dont le nom commence par "Mario"
+    $query->where('name', 'like', 'Mario%'); // on filtre les jeux dont le nom commence par "Mario"
 })
     ->with(['games' => function ($query) {
         $query->where('name', 'like', 'Mario%'); // on charge uniquement les jeux "Mario"
@@ -148,13 +148,29 @@ echo "<div class='section'>";
 echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>h. Afficher les jeux développés par une compagnie dont le nom contient « Sony »</button>";
 echo "<div class='content'>";
 
-$gamesCompagnieSony = models\Game::select('name', 'deck')
-    ->whereHas('developers', function ($query) {
-        $query->where('name', 'like', '%Sony%');
-    })->get();
-foreach ($gamesCompagnieSony as $game) {
-    echo $game->name . "<br>";
+// requête
+$games_q_h = models\Game::whereHas('developers', function ($query) {
+    $query->where('name', 'like', '%Sony%'); // on filtre les compagnies contenant "Sony"
+})
+    ->with(['developers' => function ($query) {
+        $query->where('name', 'like', '%Sony%'); // on charge uniquement les développeurs "Sony"
+    }])
+    ->get();
+
+// affichage des resultats
+if ($games_q_h->isEmpty()) {
+    echo "Aucun jeu trouve";
+} else {
+    foreach ($games_q_h as $game) {
+        echo "<br><strong>Nom du jeu:</strong> " . htmlspecialchars($game->name) . "<br>";
+
+        // Affichage des développeurs du jeu
+        foreach ($game->developers as $developer) {
+            echo "<strong>Développé par:</strong> " . htmlspecialchars($developer->name) . "<br>";
+        }
+    }
 }
+
 
 echo "</div></div>";
 
@@ -163,11 +179,12 @@ echo "<div class='section'>";
 echo "<button onclick='this.nextElementSibling.classList.toggle(\"open\")'>i. Afficher le rating initial (indiquer le rating board) des jeux dont le nom contient « Mario »</button>";
 echo "<div class='content'>";
 
-
+// requête
 $marioGames = models\Game::where('name', 'like', '%Mario%')
     ->with(['ratings.ratingBoard'])
     ->get();
 
+// affichage des resultats
 if ($marioGames->isEmpty()) {
     echo "Aucun jeu trouve";
 } else {
